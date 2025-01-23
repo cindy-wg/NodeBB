@@ -17,45 +17,10 @@ module.exports = function (middleware) {
 			'Access-Control-Allow-Headers': encodeURI(meta.config['access-control-allow-headers'] || ''),
 		};
 
-		if (meta.config['csp-frame-ancestors']) {
-			headers['Content-Security-Policy'] = `frame-ancestors ${meta.config['csp-frame-ancestors']}`;
-			if (meta.config['csp-frame-ancestors'] === '\'none\'') {
-				headers['X-Frame-Options'] = 'DENY';
-			}
-		} else {
-			headers['Content-Security-Policy'] = 'frame-ancestors \'self\'';
-			headers['X-Frame-Options'] = 'SAMEORIGIN';
-		}
+		console.log('CINDY_WANG')
+		setCspAndFrame(headers, meta.config);
 
-		if (meta.config['access-control-allow-origin']) {
-			let origins = meta.config['access-control-allow-origin'].split(',');
-			origins = origins.map(origin => origin && origin.trim());
-
-			if (origins.includes(req.get('origin'))) {
-				headers['Access-Control-Allow-Origin'] = encodeURI(req.get('origin'));
-				headers.Vary = headers.Vary ? `${headers.Vary}, Origin` : 'Origin';
-			}
-		}
-
-		if (meta.config['access-control-allow-origin-regex']) {
-			let originsRegex = meta.config['access-control-allow-origin-regex'].split(',');
-			originsRegex = originsRegex.map((origin) => {
-				try {
-					origin = new RegExp(origin.trim());
-				} catch (err) {
-					winston.error(`[middleware.addHeaders] Invalid RegExp For access-control-allow-origin ${origin}`);
-					origin = null;
-				}
-				return origin;
-			});
-
-			originsRegex.forEach((regex) => {
-				if (regex && regex.test(req.get('origin'))) {
-					headers['Access-Control-Allow-Origin'] = encodeURI(req.get('origin'));
-					headers.Vary = headers.Vary ? `${headers.Vary}, Origin` : 'Origin';
-				}
-			});
-		}
+		setAccessControlAllow(headers, meta.config, req);
 
 		if (meta.config['permissions-policy']) {
 			headers['Permissions-Policy'] = meta.config['permissions-policy'];
@@ -114,3 +79,47 @@ module.exports = function (middleware) {
 		}
 	}
 };
+
+function setCspAndFrame(headers, config) {
+	if (config['csp-frame-ancestors']) {
+		headers['Content-Security-Policy'] = `frame-ancestors ${config['csp-frame-ancestors']}`;
+		if (config['csp-frame-ancestors'] === '\'none\'') {
+			headers['X-Frame-Options'] = 'DENY';
+		}
+	} else {
+		headers['Content-Security-Policy'] = 'frame-ancestors \'self\'';
+		headers['X-Frame-Options'] = 'SAMEORIGIN';
+	}
+}
+
+function setAccessControlAllow(headers, config, req) {
+	if (config['access-control-allow-origin']) {
+		let origins = config['access-control-allow-origin'].split(',');
+		origins = origins.map(origin => origin && origin.trim());
+
+		if (origins.includes(req.get('origin'))) {
+			headers['Access-Control-Allow-Origin'] = encodeURI(req.get('origin'));
+			headers.Vary = headers.Vary ? `${headers.Vary}, Origin` : 'Origin';
+		}
+	}
+
+	if (config['access-control-allow-origin-regex']) {
+		let originsRegex = config['access-control-allow-origin-regex'].split(',');
+		originsRegex = originsRegex.map((origin) => {
+			try {
+				origin = new RegExp(origin.trim());
+			} catch (err) {
+				winston.error(`[middleware.addHeaders] Invalid RegExp For access-control-allow-origin ${origin}`);
+				origin = null;
+			}
+			return origin;
+		});
+
+		originsRegex.forEach((regex) => {
+			if (regex && regex.test(req.get('origin'))) {
+				headers['Access-Control-Allow-Origin'] = encodeURI(req.get('origin'));
+				headers.Vary = headers.Vary ? `${headers.Vary}, Origin` : 'Origin';
+			}
+		});
+	}
+}
