@@ -17,7 +17,6 @@ module.exports = function (middleware) {
 			'Access-Control-Allow-Headers': encodeURI(meta.config['access-control-allow-headers'] || ''),
 		};
 
-		console.log('CINDY_WANG')
 		setCspAndFrame(headers, meta.config);
 
 		setAccessControlAllow(headers, meta.config, req);
