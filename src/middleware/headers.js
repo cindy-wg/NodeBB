@@ -17,7 +17,17 @@ module.exports = function (middleware) {
 			'Access-Control-Allow-Headers': encodeURI(meta.config['access-control-allow-headers'] || ''),
 		};
 
-		setCspAndFrame(headers, meta.config);
+		if (meta.config['csp-frame-ancestors']) {
+			headers['Content-Security-Policy'] = `frame-ancestors ${meta.config['csp-frame-ancestors']}`;
+			if (meta.config['csp-frame-ancestors'] === '\'none\'') {
+				headers['X-Frame-Options'] = 'DENY';
+			}
+		} else {
+			headers['Content-Security-Policy'] = 'frame-ancestors \'self\'';
+			headers['X-Frame-Options'] = 'SAMEORIGIN';
+		}
+
+		console.log('cindy wang');
 
 		setAccessControlAllow(headers, meta.config, req);
 
@@ -78,18 +88,6 @@ module.exports = function (middleware) {
 		}
 	}
 };
-
-function setCspAndFrame(headers, config) {
-	if (config['csp-frame-ancestors']) {
-		headers['Content-Security-Policy'] = `frame-ancestors ${config['csp-frame-ancestors']}`;
-		if (config['csp-frame-ancestors'] === '\'none\'') {
-			headers['X-Frame-Options'] = 'DENY';
-		}
-	} else {
-		headers['Content-Security-Policy'] = 'frame-ancestors \'self\'';
-		headers['X-Frame-Options'] = 'SAMEORIGIN';
-	}
-}
 
 function setAccessControlAllow(headers, config, req) {
 	if (config['access-control-allow-origin']) {
